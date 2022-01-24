@@ -1,57 +1,91 @@
-#include <analogWrite.h>
+//#include <analogWrite.h>
 
-int irV1;
+int irVal1;
+int irVal2;
+int irVal3;
+int irVal4;
 int potVal;
-int potPin = 39;
+
 int irPin1 = 4;
+int irPin2 = 4;
+int irPin3 = 4;
+int irPin4 = 4;
+int potPin = 39;
 int switchPin = 13;
-int dacOut = 25;
+int dacPin = 25;
 
 //train speeds
-int stopped = 130;
-int fullForward = 60;
-int fullReverse = 190;
-int slowForward = 100;
-int slowReverse = 160;
+const int stopped = 130;
+const int fullForward = 60;
+const int fullReverse = 190;
+const int slowForward = 100;
+const int slowReverse = 160;
+int trainSpeed = stopped;
+int switchVal = 0;
 
-boolean inStation = false;
+bool inStation = false;
+
 
 void setup() {
-  pinMode(dacOut, OUTPUT);
   pinMode(irPin1, INPUT);
+  pinMode(irPin2, INPUT);
+  pinMode(irPin3, INPUT);
+  pinMode(irPin4, INPUT);    
+  pinMode(potPin, INPUT);        
   pinMode(switchPin, OUTPUT);
-  Serial.begin(9600);
-  dacWrite(25, fullForward);
+  pinMode(dacPin, OUTPUT);
+
+  Serial.begin(115200);
 }
+
 
 void loop() {
-  irV1 = analogRead(irPin1);
-
-  //Detecting if IR sensor has been tripped
-  if (irV1 > 1200) {
-    inStation = true;
-
-    //stops train
-    dacWrite(25, stopped);
-    delay(3000);
+  setTrainSpeed(trainSpeed);
+  if(Serial.available()){
+    extractCommandValues();
   }
-
-  while (inStation == true) {
-    potVal = analogRead(potPin);
-
-    //using a 10k pot to mimic the switch. The train won't move unless
-    //Pot is turned all the way one way or the other
-    if (potVal >= 4000) {
-      digitalWrite(switchPin, HIGH);
-      dacWrite(25, fullForward);
-      delay(5000);
-      inStation = false;
-    }
-    if (potVal <= 500) {
-      digitalWrite(switchPin, LOW);
-      dacWrite(25, fullForward);
-      delay(5000);
-      inStation = false;
-    }
-  }
+  readAndSendSensors();  
 }
+
+void setTrainSpeed(int trainSpeed) {
+  dacWrite(dacPin, trainSpeed);
+}
+
+void extractCommandValues() {
+    String commandSequence = Serial.readStringUntil(';');
+    String switchString = getValueFromString(commandSequence, ',', 0);
+    String speedString = getValueFromString(commandSequence, ',', 1);
+    switchVal = switchString.toInt();
+    trainSpeed = speedString.toInt();
+}
+
+void readAndSendSensors() {
+  Serial.print(analogRead(potPin));
+  Serial.print(',');
+  Serial.print(analogRead(irPin1));
+  Serial.print(',');
+  Serial.print(analogRead(irPin2));
+  Serial.print(',');
+  Serial.print(analogRead(irPin3));
+  Serial.print(',');
+  Serial.println(analogRead(irPin4));  
+}
+
+
+// Serial helper to extract values form sequence (eg: 1,2,3;)
+String getValueFromString(String data, char separator, int index)
+{
+  int found = 0;
+  int strIndex[] = { 0, -1 };
+  int maxIndex = data.length() - 1;
+
+  for (int i = 0; i <= maxIndex && found <= index; i++) {
+    if (data.charAt(i) == separator || i == maxIndex) {
+      found++;
+      strIndex[0] = strIndex[1] + 1;
+      strIndex[1] = (i == maxIndex) ? i + 1 : i;
+    }
+  }
+  return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
+
