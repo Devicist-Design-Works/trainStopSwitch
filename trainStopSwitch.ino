@@ -1,4 +1,4 @@
-//#include <analogWrite.h>
+#include <analogWrite.h>
 
 int irVal1;
 int irVal2;
@@ -6,10 +6,10 @@ int irVal3;
 int irVal4;
 int potVal;
 
-int irPin1 = 4;
-int irPin2 = 4;
-int irPin3 = 4;
-int irPin4 = 4;
+int irPin1 = 2;
+int irPin2 = 35;
+int irPin3 = 34;
+int irPin4 = 36;
 int potPin = 39;
 int switchPin = 13;
 int dacPin = 25;
@@ -88,4 +88,3 @@ String getValueFromString(String data, char separator, int index)
   }
   return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
-
