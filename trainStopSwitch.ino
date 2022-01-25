@@ -59,11 +59,21 @@ void loop() {
 }
 
 void setTrainSpeed(int trainSpeed) {
-  dac.setVoltage(2703, false);
+  int mapTrainSpeed = map(trainSpeed, 0,255,0,2700);
+  if(mapTrainSpeed > 2700) mapTrainSpeed = 2700;
+  dac.setVoltage(mapTrainSpeed, false);
 }
 
 void setTrack(int switchVal){
-  digitalWrite(switchPin, switchVal);
+  if(analogRead(potPin) < 600) {
+    switchVal = 1;
+    digitalWrite(switchPin, switchVal);
+  }
+  if(analogRead(potPin) > 800) {
+    switchVal = 0;
+    digitalWrite(switchPin, switchVal);
+  }
+  
 
 }
 
@@ -79,15 +89,15 @@ void extractCommandValues() {
 }
 
 void readAndSendSensors() {
-//  Serial.print(analogRead(potPin));
-//  Serial.print(',');
-//  Serial.print(analogRead(irPin1));
-//  Serial.print(',');
-//  Serial.print(analogRead(irPin2));
-//  Serial.print(',');
-//  Serial.print(analogRead(irPin3));
-//  Serial.print(',');
-//  Serial.println(analogRead(irPin4));  
+  Serial.print(analogRead(potPin));
+  Serial.print(',');
+  Serial.print(analogRead(irPin1));
+  Serial.print(',');
+  Serial.print(analogRead(irPin2));
+  Serial.print(',');
+  Serial.print(analogRead(irPin3));
+  Serial.print(',');
+  Serial.println(analogRead(irPin4));  
 }
 
 
