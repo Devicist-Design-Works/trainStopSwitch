@@ -1,5 +1,8 @@
-#include <analogWrite.h>
+#include <Adafruit_MCP4725.h>
 
+//#include <analogWrite.h>
+
+Adafruit_MCP4725 dac;
 
 int irVal1;
 int irVal2;
@@ -7,13 +10,13 @@ int irVal3;
 int irVal4;
 int potVal;
 
-int irPin1 = 2;
-int irPin2 = 35;
-int irPin3 = 34;
-int irPin4 = 36;
-int potPin = 39;
-int switchPin = 13;
-int dacPin = 25;
+int irPin1 = A0;
+int irPin2 = A1;
+int irPin3 = A2;
+int irPin4 = A3;
+int potPin = A4;
+int switchPin = 7;
+//int dacPin = 25;
 
 //train speeds
 const int stopped = 130;
@@ -34,9 +37,11 @@ void setup() {
   pinMode(irPin4, INPUT);    
   pinMode(potPin, INPUT);        
   pinMode(switchPin, OUTPUT);
-  pinMode(dacPin, OUTPUT);
+  //pinMode(dacPin, OUTPUT);
 
   Serial.begin(115200);
+  dac.begin(0x62);
+  
 
 }
 
@@ -54,7 +59,7 @@ void loop() {
 }
 
 void setTrainSpeed(int trainSpeed) {
-  dacWrite(dacPin, trainSpeed);
+  dac.setVoltage(2703, false);
 }
 
 void setTrack(int switchVal){
@@ -70,7 +75,7 @@ void extractCommandValues() {
     switchVal = switchString.toInt();
     trainSpeed = speedString.toInt();
 
-    Serial.println(switchVal);
+   
 }
 
 void readAndSendSensors() {
