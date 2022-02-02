@@ -117,7 +117,7 @@ void readAndSendSensors() {
   Serial.print(',');
   Serial.print(analogRead(irPin4));
   Serial.print(',');
-  Serial.println(analogRead(switchVal));
+  Serial.println(switchVal);
 }
 
 
