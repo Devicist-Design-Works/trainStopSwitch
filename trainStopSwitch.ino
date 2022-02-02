@@ -1,13 +1,28 @@
+//-----USAGE-----//
+//To control the track switch and speed of the train, send 2 values through
+//the serial port in this format: switchVal,trainSpeed;
+
+//-----VALUES----//
+//switchVal - either 0 or 1
+//trainSpeed - range -100 to 100
+//-100 = full speed backwards
+//0 = stopped
+//100 = full speed forwards
+
+
 #include <Adafruit_MCP4725.h>
 
-//#include <analogWrite.h>
-
+//We're using this chip to allow the arduino to emulate the potentiometer 
+//reading from the original Train remote
 Adafruit_MCP4725 dac;
 
+//Note - Will change these variable names to match their position on track
 int irVal1;
 int irVal2;
 int irVal3;
 int irVal4;
+
+//Analog Value of Potentiometer attached to Lever
 int potVal;
 
 int irPin1 = A0;
@@ -15,20 +30,12 @@ int irPin2 = A1;
 int irPin3 = A2;
 int irPin4 = A3;
 int potPin = A4;
+
+//Pin for the track switch relay
 int switchPin = 7;
-//int dacPin = 25;
 
-//train speeds
-const int stopped = 130;
-const int fullForward = 60;
-const int fullReverse = 190;
-const int slowForward = 100;
-const int slowReverse = 160;
-int trainSpeed = stopped;
+int trainSpeed = 0;
 int switchVal = 0;
-
-bool inStation = false;
-
 
 void setup() {
   pinMode(irPin1, INPUT);
@@ -37,12 +44,10 @@ void setup() {
   pinMode(irPin4, INPUT);    
   pinMode(potPin, INPUT);        
   pinMode(switchPin, OUTPUT);
-  //pinMode(dacPin, OUTPUT);
 
   Serial.begin(115200);
   dac.begin(0x62);
   
-
 }
 
 
@@ -59,12 +64,20 @@ void loop() {
 }
 
 void setTrainSpeed(int trainSpeed) {
-  int mapTrainSpeed = map(trainSpeed, 0,255,0,2700);
+  //maps inputted speed values from serial port to readable values by the train
+  int mapTrainSpeed = map(trainSpeed, 100,-100,0,2700);
+
+  //protecting the chip on the train remote
   if(mapTrainSpeed > 2700) mapTrainSpeed = 2700;
+
+  //sends speed to train
   dac.setVoltage(mapTrainSpeed, false);
 }
 
 void setTrack(int switchVal){
+  
+  //Comment out the following section to prevent the lever from switching tracks
+  //------------------------------//
   if(analogRead(potPin) < 600) {
     switchVal = 1;
     digitalWrite(switchPin, switchVal);
@@ -73,19 +86,19 @@ void setTrack(int switchVal){
     switchVal = 0;
     digitalWrite(switchPin, switchVal);
   }
-  
+  //-----------------------------//
 
+  digitalWrite(switchPin, switchVal);
+  
 }
 
+//function for parsing incoming serial commands
 void extractCommandValues() {
     String commandSequence = Serial.readStringUntil(';');
-    
     String switchString = getValueFromString(commandSequence, ',', 0);
     String speedString = getValueFromString(commandSequence, ',', 1);
     switchVal = switchString.toInt();
     trainSpeed = speedString.toInt();
-
-   
 }
 
 void readAndSendSensors() {
