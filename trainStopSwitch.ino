@@ -1,14 +1,13 @@
 //-----USAGE-----//
-//To control the track switch and speed of the train, send 2 values through
-//the serial port in this format: switchVal,trainSpeed;
+//To control the track switch and speed of the train, send either
+//1 or 2 values to the serial port seperated by a comma and ending 
+//with a semi-colon.(eg: "50;"  OR  "50,1;" ) - without the quotations
 
-//-----VALUES----//
-//switchVal - either 0 or 1
-//trainSpeed - range -100 to 100
-//-100 = full speed backwards
-//0 = stopped
-//100 = full speed forwards
+//The first value sent is the speed value ranging from -100 to 100.
+//-100 is full speed backward, 100 is full speed forward, 0 is stopped. 
 
+//The second value is the track switch. 1 is switched to the left, 2 is to the right
+//IMPORTANT: if no value is sent, the lever position will determine the track switch.
 
 #include <Adafruit_MCP4725.h>
 
