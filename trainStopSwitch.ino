@@ -16,18 +16,18 @@
 Adafruit_MCP4725 dac;
 
 //Note - Will change these variable names to match their position on track
-int irVal1;
-int irVal2;
-int irVal3;
-int irVal4;
+int RightTunnelIrVal;
+int LowerLevelIrVal;
+int LeverStopIrVal;
+int LeftTunnelIrVal;
 
 //Analog Value of Potentiometer attached to Lever
 int potVal;
 
-int irPin1 = A0;
-int irPin2 = A1;
-int irPin3 = A2;
-int irPin4 = A3;
+int RightTunnelIrPin = A0;
+int LowerLevelIrPin = A1;
+int LeverStopIrPin = A2;
+int LeftTunnerIrPin = A3;
 int potPin = A4;
 
 //Pin for the track switch relay
@@ -37,10 +37,10 @@ int trainSpeed = 0;
 int switchVal = 0;
 
 void setup() {
-  pinMode(irPin1, INPUT);
-  pinMode(irPin2, INPUT);
-  pinMode(irPin3, INPUT);
-  pinMode(irPin4, INPUT);
+  pinMode(RightTunnelIrPin, INPUT);
+  pinMode(LowerLevelIrPin, INPUT);
+  pinMode(LeverStopIrPin, INPUT);
+  pinMode(LeftTunnerIrPin, INPUT);
   pinMode(potPin, INPUT);
   pinMode(switchPin, OUTPUT);
 
@@ -109,13 +109,13 @@ void extractCommandValues() {
 void readAndSendSensors() {
   Serial.print(analogRead(potPin));
   Serial.print(',');
-  Serial.print(analogRead(irPin1));
+  Serial.print(analogRead(RightTunnelIrPin));
   Serial.print(',');
-  Serial.print(analogRead(irPin2));
+  Serial.print(analogRead(LowerLevelIrPin));
   Serial.print(',');
-  Serial.print(analogRead(irPin3));
+  Serial.print(analogRead(LeverStopIrPin));
   Serial.print(',');
-  Serial.print(analogRead(irPin4));
+  Serial.print(analogRead(LeftTunnerIrPin));
   Serial.print(',');
   Serial.println(switchVal);
 }
