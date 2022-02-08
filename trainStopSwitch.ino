@@ -1,13 +1,15 @@
 //-----USAGE-----//
 //To control the track switch and speed of the train, send either
-//1 or 2 values to the serial port seperated by a comma and ending 
+//1 or 2 values to the serial port seperated by a comma and ending
 //with a semi-colon.(eg: "50;"  OR  "50,1;" ) - without the quotations
 
 //The first value sent is the speed value ranging from -100 to 100.
-//-100 is full speed backward, 100 is full speed forward, 0 is stopped. 
+//-100 is full speed backward, 100 is full speed forward, 0 is stopped.
 
 //The second value is the track switch. 1 is switched to the left, 2 is to the right
-//IMPORTANT: if no value is sent, the lever position will determine the track switch.
+//IMPORTANT: if 0 or no value is sent, the lever position will determine the track switch.
+
+//contact: info@devicist.com
 
 #include <Adafruit_MCP4725.h>
 
@@ -46,7 +48,6 @@ void setup() {
 
   Serial.begin(115200);
   dac.begin(0x62);
-
 }
 
 
@@ -59,8 +60,8 @@ void loop() {
   }
   readAndSendSensors();
   Serial.println(switchVal);
-
 }
+
 
 void setTrainSpeed(int trainSpeed) {
   //maps inputted speed values from serial port to readable values by the train
@@ -73,8 +74,8 @@ void setTrainSpeed(int trainSpeed) {
   dac.setVoltage(mapTrainSpeed, false);
 }
 
-void setTrack(int switchVal) {
 
+void setTrack(int switchVal) {
   switch (switchVal) {
     case 0:
       if (analogRead(potPin) < 600) {
