@@ -1,15 +1,33 @@
-//-----USAGE-----//
-//To control the track switch and speed of the train, send either
-//1 or 2 values to the serial port seperated by a comma and ending
-//with a semi-colon.(eg: "50;"  OR  "50,1;" ) - without the quotations
+/*
+ * USAGE
+ * 
+ * To control the track switch and speed of the train, send either
+ * 1 or 2 values to the serial port seperated by a comma and ending
+ * with a semi-colon.(eg: "50;"  OR  "50,1;" ) - without the quotations. 
+ * 
+ * The first value is the speed value ranging from -100 to 100.
+ * -100 is full speed backward, 100 is full speed forward, 0 is stopped.
+ * 
+ * The second value is the track switch. 1 is switched to the left, 2 is to the right
+ * IMPORTANT: if 0 or no value is sent, the lever position will determine the track switch.
+ * 
+ * The following values are constantly streamed out over serial as a comma separated string.
+ * 1 - lever state (0 = neutral, 1 = pulled, 2 = pushed, 3 = error)
+ * 2 - right tunnel IR value (0 to 1023)
+ * 3 - station IR value (0 to 1023)
+ * 4 - lever stop IR value (0 to 1023)
+ * 5 - left tunnel IR value (0 to 1023)
+ * 6 - track control state (0 = direct lever control, 1 = forced left, 2 = forced right)
+ * 
+ * The IR values are used to track the position of the train around the track. 
+ * For flexibility, the train route can be controlled remotely in combo with the lever state,
+ * or the route be selected by the lever directly.
+ * 
+ * contact: info@devicist.com
+*/
 
-//The first value sent is the speed value ranging from -100 to 100.
-//-100 is full speed backward, 100 is full speed forward, 0 is stopped.
 
-//The second value is the track switch. 1 is switched to the left, 2 is to the right
-//IMPORTANT: if 0 or no value is sent, the lever position will determine the track switch.
 
-//contact: info@devicist.com
 
 #include <Adafruit_MCP4725.h>
 
@@ -17,34 +35,54 @@
 //reading from the original Train remote
 Adafruit_MCP4725 dac;
 
-//Note - Will change these variable names to match their position on track
-int RightTunnelIrVal;
-int LowerLevelIrVal;
-int LeverStopIrVal;
-int LeftTunnelIrVal;
+enum leverStateVals {
+  neutral,
+  pulled,
+  pushed,
+  error
+};
+int leverState = neutral;
 
-//Analog Value of Potentiometer attached to Lever
-int potVal;
-
-int RightTunnelIrPin = A0;
-int LowerLevelIrPin = A1;
-int LeverStopIrPin = A2;
-int LeftTunnerIrPin = A3;
-int potPin = A4;
-
-//Pin for the track switch relay
-int switchPin = 7;
+enum trackControlStates {
+  leverControl,
+  forcedLeft,
+  forcedRight
+};
+int trackControlState = leverControl;
 
 int trainSpeed = 0;
-int switchVal = 0;
+
+enum trackSwitchStates {
+  left,
+  right
+};
+
+//Note - Will change these variable names to match their position on track
+int rightTunnelIrVal;
+int leftTunnelIrVal;
+int stationIrVal;
+int leverStopIrVal;
+
+int rightTunnelIrPin = A0;
+int leftTunnelIrPin = A3;
+int stationIrPin = A1;
+int leverStopIrPin = A2;
+int pullPin = 11;
+int pushPin = 12;
+
+//Pin for the track switch relay
+int trackPin = 7;
 
 void setup() {
-  pinMode(RightTunnelIrPin, INPUT);
-  pinMode(LowerLevelIrPin, INPUT);
-  pinMode(LeverStopIrPin, INPUT);
-  pinMode(LeftTunnerIrPin, INPUT);
-  pinMode(potPin, INPUT);
-  pinMode(switchPin, OUTPUT);
+  pinMode(rightTunnelIrPin, INPUT);
+  pinMode(stationIrPin, INPUT);
+  pinMode(leverStopIrPin, INPUT);
+  pinMode(leftTunnelIrPin, INPUT);
+  
+  pinMode(trackPin, OUTPUT);
+
+  pinMode(pullPin, INPUT_PULLUP);
+  pinMode(pushPin, INPUT_PULLUP);  
 
   Serial.begin(115200);
   dac.begin(0x62);
@@ -53,13 +91,14 @@ void setup() {
 
 void loop() {
   setTrainSpeed(trainSpeed);
-  setTrack(switchVal);
+  setTrack(trackControlState);
+  updateLeverState();
 
   if (Serial.available()) {
     extractCommandValues();
   }
   readAndSendSensors();
-  Serial.println(switchVal);
+  delay(5);
 }
 
 
@@ -74,53 +113,71 @@ void setTrainSpeed(int trainSpeed) {
   dac.setVoltage(mapTrainSpeed, false);
 }
 
+void updateLeverState() {  
+  int isPushed = !digitalRead(pullPin);
+  int isPulled = !digitalRead(pushPin);  
 
-void setTrack(int switchVal) {
-  switch (switchVal) {
-    case 0:
-      if (analogRead(potPin) < 600) {
-        switchVal = 1;
-        digitalWrite(switchPin, switchVal);
-      }
-      if (analogRead(potPin) > 800) {
-        switchVal = 0;
-        digitalWrite(switchPin, switchVal);
-      }
-      break;
-
-    case 1:
-      digitalWrite(switchPin, 0);
-      break;
-
-    case 2:
-      digitalWrite(switchPin, 1);
-      break;
+  if(isPulled && !isPushed){
+    leverState = pulled;
   }
+  else if(isPushed && !isPulled){
+    leverState = pushed;
+  }
+  else if (!isPulled && !isPushed) {
+    leverState = neutral;
+  }
+  else {
+    leverState = error;
+  }
+}
+
+void setTrack(int trackControlState) {
+  switch (trackControlState) {
+
+    case forcedLeft:
+      digitalWrite(trackPin, left);
+      break;
+
+    case forcedRight:
+      digitalWrite(trackPin, right);
+      break;
+
+    case leverControl:
+      if (leverState == pushed) {
+        digitalWrite(trackPin, left);
+      }
+      else if (leverState == pulled) {
+        digitalWrite(trackPin, right);
+      }
+      else {
+        digitalWrite(trackPin, right);
+      }
+      break;      
+  }
+}
+
+void readAndSendSensors() {
+  Serial.print(leverState);
+  Serial.print(',');
+  Serial.print(analogRead(rightTunnelIrPin));
+  Serial.print(',');
+  Serial.print(analogRead(stationIrPin));
+  Serial.print(',');
+  Serial.print(analogRead(leverStopIrPin));
+  Serial.print(',');
+  Serial.print(analogRead(leftTunnelIrPin));
+  Serial.print(',');
+  Serial.println(trackControlState);
 }
 
 //function for parsing incoming serial commands
 void extractCommandValues() {
   String commandSequence = Serial.readStringUntil(';');
   String speedString = getValueFromString(commandSequence, ',', 0);
-  String switchString = getValueFromString(commandSequence, ',', 1);
+  String trackString = getValueFromString(commandSequence, ',', 1);
   trainSpeed = speedString.toInt();
-  switchVal = switchString.toInt();
+  trackControlState = trackString.toInt();
 }
-
-void readAndSendSensors() {
-  Serial.print(analogRead(potPin));
-  Serial.print(',');
-  Serial.print(analogRead(RightTunnelIrPin));
-  Serial.print(',');
-  Serial.print(analogRead(LowerLevelIrPin));
-  Serial.print(',');
-  Serial.print(analogRead(LeverStopIrPin));
-  Serial.print(',');
-  Serial.print(analogRead(LeftTunnerIrPin));
-  Serial.print(',');
-  Serial.println(switchVal);
-}
-
 
 // Serial helper to extract values form sequence (eg: 1,2,3;)
 String getValueFromString(String data, char separator, int index)
