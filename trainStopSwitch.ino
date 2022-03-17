@@ -2,8 +2,8 @@
  * USAGE
  * 
  * To control the track switch and speed of the train, send either
- * 1 or 2 values to the serial port seperated by a comma and ending
- * with a semi-colon.(eg: "50;"  OR  "50,1;" ) - without the quotations. 
+ * 1 or 2 values to the serial port separated by a comma and ending
+ * with a semicolon.(eg: "50;"  OR  "50,1;" ) - without the quotations. 
  * 
  * The first value is the speed value ranging from -100 to 100.
  * -100 is full speed backward, 100 is full speed forward, 0 is stopped.
@@ -144,10 +144,10 @@ void setTrack(int trackControlState) {
 
     case leverControl:
       if (leverState == pushed) {
-        digitalWrite(trackPin, left);
+        digitalWrite(trackPin, right);
       }
       else if (leverState == pulled) {
-        digitalWrite(trackPin, right);
+        digitalWrite(trackPin, left);
       }
       else {
         digitalWrite(trackPin, right);
