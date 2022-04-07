@@ -30,6 +30,7 @@
 
 
 #include <Adafruit_MCP4725.h>
+#include <movingAvg.h>
 
 //We're using this chip to allow the arduino to emulate the potentiometer
 //reading from the original Train remote
@@ -58,15 +59,15 @@ enum trackSwitchStates {
 };
 
 //Note - Will change these variable names to match their position on track
-int rightTunnelIrVal;
-int leftTunnelIrVal;
-int stationIrVal;
-int leverStopIrVal;
+movingAvg rightTunnelIrVal(5);
+movingAvg leftTunnelIrVal(5);
+movingAvg stationIrVal(5);
+movingAvg leverStopIrVal(5);
 
 int rightTunnelIrPin = A0;
-int leftTunnelIrPin = A3;
 int stationIrPin = A1;
 int leverStopIrPin = A2;
+int leftTunnelIrPin = A3;
 int pullPin = 11;
 int pushPin = 12;
 
@@ -83,6 +84,11 @@ void setup() {
 
   pinMode(pullPin, INPUT_PULLUP);
   pinMode(pushPin, INPUT_PULLUP);  
+
+  rightTunnelIrVal.begin();
+  leftTunnelIrVal.begin();
+  stationIrVal.begin();
+  leverStopIrVal.begin();
 
   Serial.begin(115200);
   dac.begin(0x62);
@@ -156,16 +162,17 @@ void setTrack(int trackControlState) {
   }
 }
 
-void readAndSendSensors() {
+void readAndSendSensors() {  
+  
   Serial.print(leverState);
   Serial.print(',');
-  Serial.print(analogRead(rightTunnelIrPin));
+  Serial.print(rightTunnelIrVal.reading(analogRead(rightTunnelIrPin)));
   Serial.print(',');
-  Serial.print(analogRead(stationIrPin));
+  Serial.print(stationIrVal.reading(analogRead(stationIrPin)));
   Serial.print(',');
-  Serial.print(analogRead(leverStopIrPin));
+  Serial.print(leverStopIrVal.reading(analogRead(leverStopIrPin)));
   Serial.print(',');
-  Serial.print(analogRead(leftTunnelIrPin));
+  Serial.print(leftTunnelIrVal.reading(analogRead(leftTunnelIrPin)));
   Serial.print(',');
   Serial.println(trackControlState);
 }
